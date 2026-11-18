@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SWER Broken Conductor Map · Sabrina Tavares</title>
+<meta name="description" content="Capstone project: a geospatial dashboard that shows operators where a broken SWER powerline is likely to be, to help reduce bushfire risk.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap">
+<style>
+:root {
+  --ink: #0f2b2c;
+  --ink-2: #173d3d;
+  --page: #f5f5f1;
+  --card: #ffffff;
+  --text: #22302f;
+  --muted: #5d6b68;
+  --rule: #dcded5;
+  --fault: #e5483f;
+  --ok: #3aa35f;
+  --teal: #23877d;
+  --teal-light: #7fd1c3;
+  --tint: #e6efeb;
+  --display: "Plus Jakarta Sans", "Helvetica Neue", Arial, sans-serif;
+  --body: "Inter", "Helvetica Neue", Arial, sans-serif;
+  --wrap: 1080px;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--page); color: var(--text); font-family: var(--body); font-size: 17px; line-height: 1.6; }
+img { max-width: 100%; display: block; }
+a { color: var(--teal); }
+.wrap { max-width: var(--wrap); margin: 0 auto; padding: 0 24px; }
+h1, h2, h3 { font-family: var(--display); color: var(--ink); letter-spacing: -.02em; line-height: 1.1; margin: 0; }
+h2 { font-size: clamp(28px, 4vw, 38px); font-weight: 800; }
+h3 { font-size: 20px; font-weight: 800; }
+p { margin: 0; }
+.kicker { font-size: 13px; font-weight: 700; letter-spacing: .18em; color: var(--fault); text-transform: uppercase; }
+.no { color: var(--fault); font-size: .55em; margin-right: 10px; vertical-align: .25em; letter-spacing: .04em; }
+section { padding: 72px 0; }
+.sec-head { display: grid; gap: 12px; margin-bottom: 32px; max-width: 720px; }
+.sec-head p { color: var(--muted); font-size: 18px; }
+
+/* nav */
+nav { position: sticky; top: 0; z-index: 10; background: rgba(245,245,241,.92); backdrop-filter: blur(8px); border-top: 5px solid var(--fault); border-bottom: 1px solid var(--rule); }
+nav .wrap { display: flex; justify-content: space-between; align-items: center; height: 60px; gap: 16px; }
+nav .brand { font-family: var(--display); font-weight: 800; color: var(--ink); text-decoration: none; font-size: 16px; }
+nav .links { display: flex; gap: 22px; }
+nav .links a { color: var(--muted); text-decoration: none; font-size: 14px; font-weight: 600; }
+nav .links a:hover { color: var(--ink); }
+
+/* hero */
+.hero { padding: 64px 0 40px; }
+.hero-grid { display: grid; grid-template-columns: 1fr 260px; gap: 48px; align-items: end; }
+.hero h1 { font-size: clamp(38px, 6vw, 64px); font-weight: 800; letter-spacing: -.03em; line-height: 1.02; margin: 14px 0 20px; }
+.hero h1 span { color: var(--fault); }
+.lede { font-size: 20px; max-width: 640px; }
+.project { margin-top: 14px; color: var(--teal); font-weight: 600; font-size: 15px; }
+.stat { border-left: 6px solid var(--fault); padding: 4px 0 4px 20px; display: grid; gap: 10px; }
+.stat .n { font-family: var(--display); font-weight: 800; font-size: 64px; line-height: .9; color: var(--fault); letter-spacing: -.03em; }
+.squares { display: flex; gap: 6px; }
+.squares i { width: 22px; height: 22px; border-radius: 4px; background: #cdd5d2; }
+.squares i.on { background: var(--fault); }
+.stat p { font-size: 15px; color: var(--text); }
+
+/* photo row */
+.pics { display: grid; grid-template-columns: 1.1fr 1fr .9fr; gap: 16px; margin-top: 40px; }
+.ph { position: relative; border-radius: 14px; overflow: hidden; background: #111217; min-height: 300px; }
+.ph img { position: absolute; inset: 0; }
+.ph img { width: 100%; height: 100%; object-fit: cover; }
+.tag { position: absolute; top: 14px; left: 14px; background: var(--fault); color: #fff; font-size: 12px; font-weight: 700; letter-spacing: .14em; padding: 5px 12px; border-radius: 99px; }
+.ph.map .tag { background: var(--teal); }
+.mid { background: var(--ink); color: #fff; border-radius: 14px; padding: 28px; display: flex; flex-direction: column; justify-content: center; gap: 14px; }
+.mid .n { font-family: var(--display); font-weight: 800; font-size: 56px; line-height: 1; color: var(--fault); letter-spacing: -.03em; }
+.mid p { color: #d6e2de; font-size: 16px; }
+.mid .go { font-family: var(--display); font-weight: 800; font-size: 20px; color: #fff; line-height: 1.25; padding-top: 14px; border-top: 1px solid rgba(255,255,255,.18); }
+.mid .go em { font-style: normal; color: var(--teal-light); }
+.caps { display: grid; grid-template-columns: 1.1fr 1fr .9fr; gap: 16px; margin-top: 8px; font-size: 13px; color: var(--muted); }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; color: var(--text); font-weight: 600; }
+.dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; }
+
+/* problem */
+.problem { border-top: 1px solid var(--rule); }
+.facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.fact { background: var(--card); border: 1px solid var(--rule); border-radius: 14px; padding: 24px; }
+.fact .n { font-family: var(--display); font-weight: 800; font-size: 40px; color: var(--ink); letter-spacing: -.02em; line-height: 1; }
+.fact p { margin-top: 10px; font-size: 15px; }
+.quote { margin-top: 28px; border-left: 5px solid var(--ink); padding: 6px 0 6px 22px; max-width: 760px; font-size: 18px; }
+.quote b { font-family: var(--display); font-weight: 800; color: var(--ink); }
+.quote b em { font-style: normal; color: var(--fault); }
+
+/* key idea */
+.idea-card { background: var(--card); border: 1px solid var(--rule); border-radius: 18px; padding: 36px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: center; }
+.idea-card h3 { font-size: 30px; line-height: 1.1; margin-bottom: 16px; }
+.idea-card h3 span { color: var(--fault); }
+.idea-card p + p { margin-top: 12px; }
+.idea-card svg { width: 100%; height: auto; }
+
+/* build */
+.build { background: var(--tint); }
+.steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; counter-reset: s; }
+.step { background: var(--card); border-radius: 14px; padding: 24px; border: 1px solid var(--rule); position: relative; }
+.step .c { width: 38px; height: 38px; border-radius: 50%; background: var(--ink); color: #fff; font-family: var(--display); font-weight: 800; display: grid; place-items: center; margin-bottom: 14px; }
+.step:last-child .c { background: var(--fault); }
+.step h3 { font-size: 18px; margin-bottom: 8px; }
+.step p { font-size: 15px; color: var(--muted); }
+.step .tech { display: inline-block; margin-top: 12px; font-size: 12px; font-weight: 700; color: var(--teal); border: 1px solid rgba(35,135,125,.4); border-radius: 99px; padding: 2px 10px; }
+
+/* dashboard */
+.dash img { border-radius: 14px; border: 1px solid var(--rule); width: 100%; }
+.dash .caps2 { margin-top: 10px; font-size: 14px; color: var(--muted); }
+.video { margin-top: 28px; min-height: 140px; border-radius: 14px; background: var(--ink); color: #d6e2de; display: grid; place-items: center; text-align: center; padding: 24px; overflow: hidden; }
+.video iframe { width: 100%; aspect-ratio: 16 / 9; height: auto; border: 0; display: block; }
+.video:has(iframe) { padding: 0; }
+
+/* results */
+.results { background: var(--ink); color: #fff; }
+.results h2 { color: #fff; }
+.results .sec-head p { color: #b9cbc6; }
+.res { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.r { border-top: 2px solid rgba(255,255,255,.18); padding-top: 18px; }
+.r .n { font-family: var(--display); font-weight: 800; font-size: 44px; color: var(--teal-light); letter-spacing: -.02em; line-height: 1; }
+.r.warn .n { color: var(--fault); font-size: 34px; }
+.r b { display: block; margin: 10px 0 6px; }
+.r p { color: #b9cbc6; font-size: 15px; }
+
+/* matters + next */
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.panel { background: var(--card); border: 1px solid var(--rule); border-radius: 18px; padding: 32px; }
+.panel h3 { font-size: 24px; margin-bottom: 16px; }
+.panel ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; }
+.panel li { padding-left: 24px; position: relative; }
+.panel li::before { content: ""; position: absolute; left: 0; top: 10px; width: 10px; height: 10px; border-radius: 50%; background: var(--teal); }
+.panel.next li::before { background: var(--fault); }
+
+.closing { text-align: center; padding: 64px 0; border-top: 1px solid var(--rule); }
+.closing p { font-family: var(--display); font-weight: 800; font-size: clamp(26px, 4vw, 40px); color: var(--ink); letter-spacing: -.02em; }
+.closing em { font-style: normal; color: var(--fault); }
+
+footer { background: var(--ink); color: #b9cbc6; padding: 40px 0; font-size: 14px; }
+footer .wrap { display: grid; grid-template-columns: 1fr 1.4fr; gap: 32px; }
+footer b { color: #fff; font-family: var(--display); font-size: 17px; }
+footer a { color: var(--teal-light); }
+footer ol { margin: 8px 0 0; padding-left: 18px; }
+
+@media (max-width: 860px) {
+  .hero-grid, .idea-card, .two, footer .wrap { grid-template-columns: 1fr; }
+  .pics, .caps { grid-template-columns: 1fr; }
+  .ph { min-height: 0; aspect-ratio: 4 / 3; }
+  .caps > span:empty { display: none; }
+  .facts { grid-template-columns: 1fr; }
+  .steps, .res { grid-template-columns: 1fr 1fr; }
+  nav .links { display: none; }
+  .idea-card { padding: 24px; }
+}
+@media (max-width: 520px) {
+  body { font-size: 16px; }
+  .wrap { padding: 0 16px; }
+  .steps, .res { grid-template-columns: 1fr; }
+  section { padding: 52px 0; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="brand" href="#top">SWER Break Map</a>
+    <div class="links">
+      <a href="#problem">Problem</a>
+      <a href="#idea">Key idea</a>
+      <a href="#build">How it works</a>
+      <a href="#dashboard">Dashboard</a>
+      <a href="#results">Results</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <span class="kicker">Bushfire safety × Digital Twin</span>
+        <h1>Broken powerlines can start bushfires. <span>Now operators can see where.</span></h1>
+        <p class="lede">Today's alarm says <i>that</i> a SWER line broke. My dashboard shows <i>where</i>, as a section on a map.</p>
+        <p class="project">Geospatial Situational Awareness for SWER Broken Conductor Detection · Capstone project, Victoria University</p>
+      </div>
+      <div class="stat">
+        <span class="n">3 of 5</span>
+        <span class="squares"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span>
+        <p>major powerline fires on Black Saturday 2009 started on SWER lines.</p>
+      </div>
+    </div>
+
+    <div class="pics">
+      <div class="ph arc"><img src="images/arc-photo.png" alt="A fallen power conductor arcing on the ground and throwing sparks into dry grass."><span class="tag">THE DANGER</span></div>
+      <div class="ph map"><img src="images/dashboard-line.png" alt="My Grafana dashboard for the Springhill SWER network. TX2 and TX3 are Offline and the suspected section is drawn in red; the rest of the line is green."><span class="tag">MY DASHBOARD</span></div>
+      <div class="mid">
+        <span class="n">0.02 s</span>
+        <p>is all an electric arc from a fallen line can need to start a fire, under the wrong conditions.</p>
+        <p class="go">So every minute spent <em>searching</em> for the break matters.</p>
+      </div>
+    </div>
+    <div class="caps">
+      <span>Downed conductor arcing. Photo: Russell, Benner &amp; Wischkaemper (2012).</span>
+      <span class="legend"><span><i class="dot" style="background:#e5484d"></i>Red = suspected section</span><span><i class="dot" style="background:var(--ok)"></i>Green = still Online</span></span>
+      <span></span>
+    </div>
+  </div>
+</header>
+
+<section class="problem" id="problem">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2><span class="no">01</span>The problem</h2>
+      <p>SWER (Single Wire Earth Return) lines carry power across long stretches of rural Australia, often through high fire-risk country. When one breaks and falls, it can arc and ignite dry grass.</p>
+    </div>
+    <div class="facts">
+      <div class="fact"><span class="n">~1 in 5</span><p>kilometres of Australia's electricity network is SWER, mostly long rural lines.</p></div>
+      <div class="fact"><span class="n">0.02 s</span><p>is all an arc can need to ignite a bushfire, under the wrong conditions.</p></div>
+      <div class="fact"><span class="n">&lt; 1 s</span><p>for an existing research system to detect a broken SWER line and trip it.</p></div>
+    </div>
+    <p class="quote"><b>That <em>≠</em> where.</b> Detection already works, but operators still see a list of devices. Crews may have to patrol kilometres of line to find the actual break.</p>
+  </div>
+</section>
+
+<section id="idea">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2><span class="no">02</span>The key idea</h2>
+    </div>
+    <div class="idea-card">
+      <svg viewBox="20 30 620 160" role="img" aria-label="A SWER line from the receiver splits to three transmitters. TX2 and TX3 are offline, so the stretch they share is highlighted.">
+        <g fill="none" stroke="#9eaaa6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M78 118 H180"/><path d="M180 118 L228 58 H318"/><path d="M430 118 L478 66 H566"/><path d="M430 118 L486 160 H572"/></g>
+        <path d="M180 118 H430" stroke="#e5483f" stroke-width="10" stroke-linecap="round" fill="none" opacity=".2"/>
+        <path d="M180 118 H430" stroke="#e5483f" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+        <g fill="#0f2b2c"><circle cx="180" cy="118" r="3.6"/><circle cx="430" cy="118" r="3.6"/><circle cx="130" cy="118" r="2.8"/><circle cx="270" cy="58" r="2.8"/><circle cx="520" cy="66" r="2.8"/><circle cx="530" cy="160" r="2.8"/></g>
+        <text x="305" y="146" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="700" fill="#e5483f">one break here explains both</text>
+        <rect x="34" y="102" width="44" height="32" rx="4" fill="#0f2b2c"/><text x="56" y="123" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#fff">RX</text>
+        <circle cx="334" cy="58" r="16" fill="#3aa35f"/><text x="334" y="63" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#fff">TX1</text>
+        <text x="356" y="63" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="600" fill="#3aa35f">still heard</text>
+        <circle cx="584" cy="66" r="16" fill="#fff" stroke="#e5483f" stroke-width="2.6" stroke-dasharray="4 3"/><text x="584" y="71" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#e5483f">TX2</text>
+        <circle cx="590" cy="160" r="16" fill="#fff" stroke="#e5483f" stroke-width="2.6" stroke-dasharray="4 3"/><text x="590" y="165" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#e5483f">TX3</text>
+        <text x="587" y="42" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="600" fill="#e5483f">silent</text>
+      </svg>
+      <div>
+        <h3>Silence has a shape. <span>Who goes quiet tells you where.</span></h3>
+        <p>Along each SWER line, transmitters (TX) send a signal back to a receiver (RX) at the start of the line. If the line breaks, every transmitter beyond the break goes silent.</p>
+        <p>Here TX2 and TX3 are silent but TX1 is still heard. One break on the stretch TX2 and TX3 share explains it, so <b>only that stretch turns red</b>.</p>
+        <p>If no single break fits the pattern, <b>the dashboard says so instead of guessing</b>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="build" id="build">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2><span class="no">03</span>How it works</h2>
+      <p>A pipeline from the utility's own map files to a live map, tested on 12 real SWER networks in Victoria, each with 3 to 5 transmitters.</p>
+    </div>
+    <div class="steps">
+      <div class="step"><span class="c">1</span><h3>Utility maps</h3><p>The starting point is the utility's KML map files for each network: poles, lines and devices.</p><span class="tech">KML</span></div>
+      <div class="step"><span class="c">2</span><h3>Read the maps</h3><p>A parser pulls every pole, line and device out of each file and snaps each device onto its line.</p><span class="tech">Python</span></div>
+      <div class="step"><span class="c">3</span><h3>Build a Digital Twin</h3><p>Each network is stored as a connected graph of poles and lines in a cloud database.</p><span class="tech">PostgreSQL on AWS</span></div>
+      <div class="step"><span class="c">4</span><h3>Show the suspected section</h3><p>For any mix of Online and Offline transmitters, the database finds the stretch that explains it, and the dashboard paints it red.</p><span class="tech">Grafana</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="dash" id="dashboard">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2><span class="no">04</span>The dashboard</h2>
+      <p>The Springhill network with TX2 and TX3 Offline. The suspected section is red; everything still Online stays green.</p>
+    </div>
+    <picture><source media="(max-width: 600px)" srcset="images/dashboard-line.png"><img src="images/dashboard-springhill.png" alt="Full Grafana dashboard view of the Springhill SWER network with TX2 and TX3 Offline and the suspected section in red."></picture>
+    <p class="caps2">Screenshot of my Grafana dashboard.</p>
+    <!-- To add your video: replace the <p> below with your YouTube embed, e.g.
+         <iframe src="https://www.youtube.com/embed/VIDEO_ID" title="Project demo video" allowfullscreen></iframe> -->
+    <div class="video"><iframe src="https://www.loom.com/embed/b0b7296c97ed48f9b1e8ff024c168550" title="Project demo: the dashboard updating as transmitter status changes" allowfullscreen></iframe></div>
+    <p class="caps2">Demo video: changing transmitter status in the database and watching the dashboard update. <a href="https://www.loom.com/share/b0b7296c97ed48f9b1e8ff024c168550">Open on Loom</a>.</p>
+  </div>
+</section>
+
+<section class="results" id="results">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2><span class="no">05</span>What testing showed</h2>
+      <p>All 12 networks, every possible transmitter status.</p>
+    </div>
+    <div class="res">
+      <div class="r"><span class="n">12</span><b>real networks, one design</b><p>The same database and logic work for networks with 3, 4 or 5 transmitters.</p></div>
+      <div class="r"><span class="n">144 / 144</span><b>status combinations correct</b><p>Every Online/Offline mix gave the expected suspected section.</p></div>
+      <div class="r"><span class="n">1.26 m</span><b>largest snap needed</b><p>Every device sat within the 2 m limit of its line. Mapped paths matched the KML for all 12 networks.</p></div>
+      <div class="r warn"><span class="n">Section ≠ pole</span><b>it narrows the search</b><p>The result is a section of line, not the exact pole. Pinpointing the break is the next step.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap two">
+    <div class="panel">
+      <h3>Why it matters</h3>
+      <ul>
+        <li>Crews can start at the suspected section instead of patrolling the whole line.</li>
+        <li>Operators see the network on a map, not a list of devices.</li>
+        <li>One design works across different SWER networks, tested on 12.</li>
+      </ul>
+    </div>
+    <div class="panel next">
+      <h3>What's next</h3>
+      <ul>
+        <li>Connect the dashboard to live field data instead of test scenarios.</li>
+        <li>Narrow the suspected section down to the exact pole or span.</li>
+        <li>Test with operators to see how it fits their control room workflow.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<div class="closing">
+  <div class="wrap"><p>Operators need to see <em>where</em>, not just <em>that</em>.</p></div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <b>Sabrina Tavares</b>
+      <p>Bachelor of Engineering (Honours), Electrical and Electronic<br>Victoria University, Melbourne · NEF4201 Capstone</p>
+    </div>
+    <div>
+      <b>Sources</b>
+      <ol>
+        <li>Powerline Bushfire Safety Taskforce, Final Report, 2011 (Black Saturday and arc ignition).</li>
+        <li>P. Grad, “SWER Still Going Strong”, ESD News; Energy Networks Australia, 2021 (SWER share of the network).</li>
+        <li>Arc photo: Russell, Benner &amp; Wischkaemper, 2012.</li>
+        <li>Network data: utility KML files. Dashboard: author's own Grafana build.</li>
+      </ol>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
